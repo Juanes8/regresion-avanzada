@@ -1,0 +1,23 @@
+---
+title: "Modelo"
+author: "Juan Escalona"
+date: "5/25/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+#--- Usar espejo CRAN del ITAM ---
+options(repos="http://cran.itam.mx/")
+
+#--- Funciones utiles ---
+prob<-function(x){
+  out<-min(length(x[x>0])/length(x),length(x[x<0])/length(x))
+  out
+}
+```
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+```
+

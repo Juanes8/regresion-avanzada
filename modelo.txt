@@ -1,0 +1,14 @@
+model
+{
+#Likelihood
+for (i in 1:n) {
+	y[i] ~ dbin(p[i],ne[i])
+	eta[i]<-beta[1]+beta[2]*x1[i]+beta[3]*x2[i]+beta[4]*x3[i]+beta[5]*x4[i]
+	p[i]<-exp(eta[i])/(1+exp(eta[i]))
+}
+#Priors 
+#p[i] ~ dbeta(1,1)
+for (j in 1:5) { beta[j] ~ dnorm(0,0.001) }
+#Prediction 1
+for (i in 1:n) { yf1[i] ~ dbin(p[i],ne[i]) }
+}
