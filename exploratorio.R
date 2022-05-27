@@ -74,8 +74,8 @@ plot_valores <- function(indicador, year, mes){
     group_by(State) |>
     summarise(indicador_promedio = mean({{indicador}}, na.rm=T)) |> pull(indicador_promedio)
   vector_indicador <- vector_indicador[c(2,7,4,5,8,6,3,1)]
-  sf_oz$Humedad <- as.numeric(vector_indicador)
-  pl <- ggplot(data = sf_oz, aes(fill = Humedad)) + geom_sf()
+  sf_oz <- sf_oz |> mutate(indicador_promedio = as.numeric(vector_indicador))
+  pl <- ggplot(data = sf_oz, aes(fill = indicador_promedio)) + geom_sf()
   pl <- pl + scale_fill_gradient(high = "#132B43", low = "#56B1F7") # para cambiar el color
   pl <- pl + labs(title ="Indicadores climatológicos de Australia")
   pl <- pl + labs(subtitle= mes_interno)
@@ -85,7 +85,7 @@ plot_valores <- function(indicador, year, mes){
 
 imputados_clima |> pull(unique(Month))
 
-plot_valores(Humidity3pm, 2011, 5)
+plot_valores(Humidity3pm, 2011, 6)
 
 
 
