@@ -1,6 +1,6 @@
 # librerías 
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(tidyverse, skimr, janitor, ozmaps, sf)
+pacman::p_load(tidyverse, skimr, janitor, ozmaps, sf, magick)
 
 # La base original del clima en Australia (está almacenada en Google Drive para que cualquiera la pueda leer)
 id_clima_australia <- "1ld71eMURJBKh9oUsnbWFKrF27xeG5CJ6"
@@ -153,3 +153,20 @@ plot_valores_anual <- function(indicador, year){
 }
 
 plot_valores_anual(Humidity3pm, 2014)
+
+# Para armar los gifs
+
+ruta <- list.files("/Users/carloslopezdelacerda/Library/CloudStorage/GoogleDrive-caribaz@gmail.com/Mi unidad/ITAM/materias_maestria/Regresión Avanzada/final/velocidad_viento/anual", pattern="*.png", full.names=TRUE)
+
+img_list <- lapply(ruta, image_read)
+
+## join the images together
+img_joined <- image_join(img_list)
+#
+# ## animate at 2 frames per second
+img_animated <- image_animate(img_joined, fps = 2)
+
+# save to disk
+image_write(image = img_animated,
+            path = "velocidad_anual.gif")
+            
