@@ -66,8 +66,20 @@ library(choroplethrAdmin1)
 # Aplicamos un head para quitar la zona de "Otras Zonas" que son Islas sin importancia en nuestra base
 sf_oz <- ozmap_data("states") |> head(8)
 
-plot_valores <- function(indicador, year, mes){
-  mes_interno <- paste0(paste("Humedad promedio en los diferentes estados del país en el mes"), " ", "0", as.character(mes))
+# Función para sacar los valores por mes 
+# Está cerca de ser automátizable pero aún hay que cambiar manualmente el título en la variable mes interno 
+# y los colores dependiendo de cual sea el indicador
+# humedad (high = "#132B43", low = "#56B1F7")
+# presion atmosferica (high = "#b03261", low = "#f3e6eb")
+# aire aire azul (high = "#99d9ff", low = "#ffffff")
+# precipitación (high = "#007541", low = "#78d23d")
+# temperatura (high = "red", low = "yellow")
+
+plot_valores_mensual <- function(indicador, year, mes){
+  titulo_interno <- paste0(paste("Indicadores climatológicos de Australia para el año"), " ", as.character(year))
+  mes_interno <- paste0(paste("Precipitación promedio en los diferentes estados del país en el mes"), " ", "0", as.character(mes))
+  nombre_indicador <- deparse(substitute(indicador))
+  nombre_plot <- paste0(deparse(substitute(indicador)), deparse(substitute(mes)),".png")
   vector_indicador <- imputados_clima |>
     filter(Year == year) |>
     filter(Month == mes) |>
@@ -75,41 +87,69 @@ plot_valores <- function(indicador, year, mes){
     summarise(indicador_promedio = mean({{indicador}}, na.rm=T)) |> pull(indicador_promedio)
   vector_indicador <- vector_indicador[c(2,7,4,5,8,6,3,1)]
   sf_oz <- sf_oz |> mutate(indicador_promedio = as.numeric(vector_indicador))
-  pl <- ggplot(data = sf_oz, aes(fill = indicador_promedio)) + geom_sf()
-  pl <- pl + scale_fill_gradient(high = "#132B43", low = "#56B1F7") # para cambiar el color
-  pl <- pl + labs(title ="Indicadores climatológicos de Australia")
+  pl <- ggplot(data = sf_oz, aes(fill = indicador_promedio)) + geom_sf() + geom_sf_text_repel(aes(label = NAME), nudge_x = case_when(sf_oz$NAME == "Western Australia" ~ -6.5,
+                                                                                                                                                        sf_oz$NAME == "Northern Territory" ~ 0,
+                                                                                                                                                        sf_oz$NAME == "Queensland" ~ 10,
+                                                                                                                                                        sf_oz$NAME == "New South Wales" ~ 60,
+                                                                                                                                                        sf_oz$NAME == "Australian Capital Territory" ~ 30,
+                                                                                                                                                        sf_oz$NAME == "Victoria" ~ -3,
+                                                                                                                                                        sf_oz$NAME == "Tasmania" ~ 7.5,
+                                                                                                                                                        TRUE ~ -3),
+                                                                                              nudge_y = case_when(sf_oz$NAME == "Western Australia" ~ 7,
+                                                                                                                  sf_oz$NAME == "Northern Territory" ~ 9,
+                                                                                                                  sf_oz$NAME == "Queensland" ~ 2.5,
+                                                                                                                  sf_oz$NAME == "New South Wales" ~ 0,
+                                                                                                                  sf_oz$NAME == "Australian Capital Territory" ~ -4,
+                                                                                                                  sf_oz$NAME == "Victoria" ~ -3,
+                                                                                                                  sf_oz$NAME == "Tasmania" ~ 0,
+                                                                                                                  TRUE ~ -5))
+  pl <- pl + scale_fill_gradient(high = "#007541", low = "#78d23d") # para cambiar el color
+  pl <- pl + labs(title =titulo_interno)
   pl <- pl + labs(subtitle= mes_interno)
+  pl <- pl + labs(fill = nombre_indicador)
   pl <- pl + theme_void()
-  pl
+  ggsave(filename = nombre_plot, pl)
 }
 
-imputados_clima |> pull(unique(Month))
+plot_valores_mensual(Rainfall, 2012, 11)
 
-plot_valores(Humidity3pm, 2011, 6)
+# Para los gráficos anuales
+# Está cerca de ser automátizable pero aún hay que cambiar manualmente el título en la variable subtitulo interno 
+# y los colores dependiendo de cual sea el indicador
 
+plot_valores_anual <- function(indicador, year){
+  titulo_interno <- paste0(paste("Indicadores climatológicos de Australia para el año"), " ", as.character(year))
+  subtitulo_interno <- "Humedad promedio en los diferentes estados del país"
+  nombre_indicador <- deparse(substitute(indicador))
+  nombre_plot <- paste0(deparse(substitute(indicador)), deparse(substitute(year)),".png")
+  vector_indicador <- imputados_clima |>
+    filter(Year == year) |>
+    group_by(State) |>
+    summarise(indicador_promedio = mean({{indicador}}, na.rm=T)) |> pull(indicador_promedio)
+  vector_indicador <- vector_indicador[c(2,7,4,5,8,6,3,1)]
+  sf_oz <- sf_oz |> mutate(indicador_promedio = as.numeric(vector_indicador))
+  pl <- ggplot(data = sf_oz, aes(fill = indicador_promedio)) + geom_sf() + geom_sf_text_repel(aes(label = NAME), nudge_x = case_when(sf_oz$NAME == "Western Australia" ~ -6.5,
+                                                                                                                                     sf_oz$NAME == "Northern Territory" ~ 0,
+                                                                                                                                     sf_oz$NAME == "Queensland" ~ 10,
+                                                                                                                                     sf_oz$NAME == "New South Wales" ~ 60,
+                                                                                                                                     sf_oz$NAME == "Australian Capital Territory" ~ 30,
+                                                                                                                                     sf_oz$NAME == "Victoria" ~ -3,
+                                                                                                                                     sf_oz$NAME == "Tasmania" ~ 7.5,
+                                                                                                                                     TRUE ~ -3),
+                                                                                              nudge_y = case_when(sf_oz$NAME == "Western Australia" ~ 7,
+                                                                                                                  sf_oz$NAME == "Northern Territory" ~ 9,
+                                                                                                                  sf_oz$NAME == "Queensland" ~ 2.5,
+                                                                                                                  sf_oz$NAME == "New South Wales" ~ 0,
+                                                                                                                  sf_oz$NAME == "Australian Capital Territory" ~ -4,
+                                                                                                                  sf_oz$NAME == "Victoria" ~ -3,
+                                                                                                                  sf_oz$NAME == "Tasmania" ~ 0,
+                                                                                                                  TRUE ~ -5))
+  pl <- pl + scale_fill_gradient(high = "#132B43", low = "#56B1F7") # para cambiar el color
+  pl <- pl + labs(title =titulo_interno)
+  pl <- pl + labs(subtitle= subtitulo_interno)
+  pl <- pl + labs(fill = nombre_indicador)
+  pl <- pl + theme_void()
+  ggsave(filename = nombre_plot, pl)
+}
 
-
-# valores_hum <- imputados_clima |>
-#   filter(Year == 2011) |>
-#   group_by(State) |>
-#   summarize(humedad_promedio = mean(Humidity3pm, na.rm=T)) |> pull(humedad_promedio)
-#  
-# 
-# valores_hum_ggplot_plus <- valores_hum[c(2,7,4,5,8,6,3,1)]
-# 
-# 
-# sf_oz_plus$Humedad <- as.numeric(valores_hum_ggplot_plus)
-# 
-# sf_oz$Humedad <- as.numeric(valores_hum_ggplot)
-# 
-# pl <- ggplot(data = sf_oz_plus, aes(fill = Humedad)) + geom_sf()
-# pl <- pl + scale_fill_gradient(high = "#132B43", low = "#56B1F7") # para cambiar el color
-# pl <- pl + labs(title ="Indicadores climatológicos de Australia")
-# pl <- pl + labs(subtitle ="Humedad promedio a las 3 de la tarde")
-# pl <- pl + theme_void()
-# pl
-# 
-# 
-# years_apply <- c(2008:2013)
-# 
-# lapply(years_apply, function(x){tabyl(clima_australia |> filter(Year==x), Month)})
+plot_valores_anual(Humidity3pm, 2014)
